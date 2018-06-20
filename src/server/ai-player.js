@@ -38,8 +38,9 @@
       return [firstMocket, secondMocket];
     }
 
-    function AIPlayer(gameSession) {
+    function AIPlayer(gameSession, moveDelay=0) {
       this.gameSession = gameSession;
+      this.moveDelay = moveDelay;
       this.init();
     }
 
@@ -49,13 +50,15 @@
         this.participant = this.gameSession.acceptParticipant(
           theirMocket, 'Botson', null);
 
-        myMocket.on('moveMade', () => this._makeNextMoveMaybe());
+        myMocket.on('moveMade', () => setTimeout(() => this._makeNextMoveMaybe(), this.moveDelay));
         myMocket.on(
           'gameStarted',
           () => setTimeout(() => this._makeNextMoveMaybe(), 500));
       },
       _makeNextMoveMaybe: function() {
         if (!this.gameSession.gameState.currentTurn === this.participant.color) {
+          return;
+        }else if (this.gameSession.gameState.terminated) {
           return;
         }
 

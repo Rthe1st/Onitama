@@ -84,7 +84,7 @@ function wrap(
       throw new ApplicationError('Insufficient number of cards selected.', 'FORM');
     }
 
-    if ((new Set(['human', 'ai'])).has(params.opponent)) {
+    if ((new Set(['human', 'ai', 'ai_only'])).has(params.opponent)) {
       options.opponent = params.opponent;
     } else {
       options.opponent = 'human';
@@ -116,6 +116,9 @@ function wrap(
 
     if (options.opponent === 'ai') {
       const opponent = new AIPlayer(gameSession);
+    }else if(options.opponent === 'ai_only'){
+      const opponent = new AIPlayer(gameSession, moveDelay=2000);
+      const opponent2 = new AIPlayer(gameSession, moveDeplay=2000);
     }
     
     res.redirect(`/game/${gameSession.id}`);
