@@ -34,62 +34,74 @@
       return value;
     }
 
-    function evalMove(move, gameState, depth, weights=defaultWeights) {
-      const branch = branchAndMove(move, gameState),
-        perspective = gameState.currentTurn;
+    function getMoves(gameState){
+      return gameState.getPieces()
+      .filter(cell => cell.piece.getColor() === gameState.currentTurn)
+      .map(cell => {
+        var targetCells = gameState.gatherMoves([cell.x, cell.y]);
 
-      if (depth <= 0) {
-        move.value = baseEvalState(perspective, branch, weights);
-      } else {
-        const opponentMove = recursiveBestMove(branch, depth-1, weights);
+        return targetCells.map(targetCell => {
+          return targetCell.cards
+            .map(card => {
+              return {
+                card: card,
+                sourceCell: [cell.x, cell.y],
+                targetCell: targetCell.cell
+              };
+            })
+            .reduce(utils.flattenReduce, []);
+          })
+          .reduce(utils.flattenReduce, []);
+      })
+      .reduce(utils.flattenReduce, []);
 
-        if (opponentMove === null) {
-          move.value = baseEvalState(perspective, branch, weights);
-          return move;
-        }
-
-        const branch2 = branchAndMove(opponentMove, branch),
-          followupMove = recursiveBestMove(branch2, depth-2, weights);
-
-        if (followupMove === null) {
-          move.value = baseEvalState(perspective, branch, weights);
-          return move;
-        }
-
-        move.value = followupMove.value;
-      }
-
-      return move;
     }
 
     function recursiveBestMove(gameState, depth, weights=defaultWeights) {
-      if (gameState.winner) {
-        return null;
+
+      if(depth < 1){
+        console.log("Depth should start be a minimum of 1");
       }
-
-      const possibleMoves = gameState.getPieces()
-        .filter(cell => cell.piece.getColor() === gameState.currentTurn)
-        .map(cell => {
-          var targetCells = gameState.gatherMoves([cell.x, cell.y]);
-
-          return targetCells.map(targetCell => {
-            return targetCell.cards
-              .map(card => {
-                return {
-                  card: card,
-                  sourceCell: [cell.x, cell.y],
-                  targetCell: targetCell.cell
-                };
-              })
-              .reduce(utils.flattenReduce, []);
-            })
-            .reduce(utils.flattenReduce, []);
-        })
-        .reduce(utils.flattenReduce, [])
-        .map(move => evalMove(move, gameState, depth-1, weights))
+      const possibleMoves = getMoves(gameState)
+        .map(move => {
+            move.value = stateValueAfterMove(gameState, depth-1, move, weights);
+            return move;
+          }
+        )
         .sort((l, r) => r.value - l.value);
+        if(possibleMoves.length == 0){
+          //pick a random card to hand over
+          return {
+            card: gameState.getAvailableCards(gameState.currentTurn)[0],
+            sourceCell: null,
+            targetCell: null
+          };
+        }else{
+          return possibleMoves[0];
+        }
+    }
 
-      return possibleMoves[0];
+    function stateValueAfterMove(gameState, depth, move, weights) {
+      // this function is more like "maxmax" then "minimax"
+      // because we let the opponent maximise their heuristic, instead of minimising ours
+      // but that ok because the heuristic is symetric between players
+
+      gameState = branchAndMove(move, gameState);
+      
+      if (depth == 0 || gameState.terminated) {
+        let perspective = gameState.currentTurn;
+        return baseEvalState(perspective, gameState, weights);
+      }else{
+        const possibleValues = getMoves(gameState)
+        .map(nextMove => stateValueAfterMove(gameState, depth-1, nextMove, weights))
+        .sort((l, r) => r - l);
+        if(possibleValues.length == 0){
+          // read the onitama rules and work out if having to skip a go is good or bad
+          //for now, return 0 as a neutral value
+        }else{
+          return possibleValues[0];
+        }
+      }
     }
 
     return {

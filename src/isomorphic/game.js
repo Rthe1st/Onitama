@@ -111,8 +111,7 @@
         return card
       },
       validateMove(initialPosition, targetPosition, card) {
-        const piece = this.getCellContents(...initialPosition);
-
+        
         if (!this.started) {
           return {
             valid: false,
@@ -126,6 +125,20 @@
             reason: 'The game is over, no further moves allowed.'
           };
         }
+
+        if(initialPosition == null && targetPosition == null){
+          for(let availibleCard of this.getAvailableCards(this.currentTurn)){
+            if(card.getId() == availibleCard.getId()){
+              return {valid: true};
+            }
+          }
+          return {
+            valid: false,
+            reason: 'Player does not have chosen card'
+          };
+        }
+
+        const piece = this.getCellContents(...initialPosition);
 
         if (piece === null || piece.getColor() !== this.currentTurn) {
           return {
@@ -160,15 +173,20 @@
       },
       executeMove(initialPosition, targetPosition, card) {
         if (!this.validateMove(initialPosition, targetPosition, card).valid) {
+          console.log(this.validateMove(initialPosition, targetPosition, card));
           throw new Error('Invalid move!');
         }
 
+        let pass = (initialPosition == null && targetPosition == null);
 
-        const [ix, iy] = initialPosition,
-          [tx, ty] = targetPosition;
+        if(!pass){
 
-        this.board[tx][ty] = this.board[ix][iy];
-        this.board[ix][iy] = null;
+          const [ix, iy] = initialPosition,
+            [tx, ty] = targetPosition;
+
+          this.board[tx][ty] = this.board[ix][iy];
+          this.board[ix][iy] = null;
+        }
 
         this.deck
           .filter(card => card.hand === 'TRANSFER')[0]
@@ -184,6 +202,10 @@
           targetPosition: targetPosition,
           card
         });
+
+        if(pass){
+          return;
+        }
 
         // Check for victory
         const masters = this.getPieces()

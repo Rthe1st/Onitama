@@ -66,7 +66,7 @@ function wrap(
         gameState.start();
         turns = 0;
         while(!gameState.terminated){
-          if(gameState.turnNumber > 50){
+          if(gameState.turnNumber > 500){
             return "draw";
           }
           let move = player_1(gameState);
@@ -102,7 +102,7 @@ function wrap(
             wins["draw"]++;
           }
         }
-        for(let i=0; i<10; i++){
+        for(let i=0; i<100; i++){
           winner = ai_game(ai_2, ai_1);
           if(winner == "WHITE"){
             wins["ai_2"]++;
@@ -164,7 +164,7 @@ function wrap(
     }
     //results = run_league();
     //console.log(results);
-    wins = compare_ais(league[2]["make_move"], league[2]["make_move"]);
+    wins = compare_ais(league[0]["make_move"], league[1]["make_move"]);
     console.log(wins);
     console.log(significance(wins["ai_1"], wins["ai_2"]));
 }
