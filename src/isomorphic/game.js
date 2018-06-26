@@ -94,6 +94,7 @@
 
         this.started = false;
         this.currentTurn = WHITE;
+        this.turnNumber = 0;
 
         return this;
       },
@@ -175,7 +176,7 @@
 
         card.hand = 'TRANSFER';
         this.currentTurn = (this.currentTurn === WHITE) ? BLACK : WHITE;
-
+        this.turnNumber++;
         this._executeStateChange({
           type: 'TURN',
           player: this.currentTurn,
