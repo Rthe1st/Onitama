@@ -25,7 +25,16 @@
             .reduce(utils.flattenReduce, []);
         })
         .reduce(utils.flattenReduce, []);
-      return possibleMoves[Math.floor(Math.random()*possibleMoves.length)];
+      if(possibleMoves.length == 0){
+        //pick a random card to hand over
+        return {
+          card: gameState.getAvailableCards(gameState.currentTurn)[0],
+          sourceCell: null,
+          targetCell: null
+        };
+      }else{
+        return possibleMoves[Math.floor(Math.random()*possibleMoves.length)];
+      }
     }
 
     return {
