@@ -309,6 +309,27 @@
 
         return combinedMoveList;
       },
+      gatherMovesForPlayer(player=this.currentTurn){
+        return this.getPieces()
+        .filter(cell => cell.piece.getColor() === player)
+        .map(cell => {
+          var targetCells = this.gatherMoves([cell.x, cell.y]);
+  
+          return targetCells.map(targetCell => {
+            return targetCell.cards
+              .map(card => {
+                return {
+                  card: card,
+                  sourceCell: [cell.x, cell.y],
+                  targetCell: targetCell.cell
+                };
+              })
+              .reduce(utils.flattenReduce, []);
+            })
+            .reduce(utils.flattenReduce, []);
+        })
+        .reduce(utils.flattenReduce, []);
+      },
       isPassAvailable: function() {
         const numMoves = this.getPieces()
           .filter(({piece}) => piece.getColor() === this.currentTurn)

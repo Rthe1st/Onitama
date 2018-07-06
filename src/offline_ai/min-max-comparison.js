@@ -8,6 +8,7 @@ requirejs.config({
     'cards': '../isomorphic/cards',
     'utils': '../isomorphic/utils',
     'minimax-ai': '../isomorphic/minimax-ai',
+    'minimax-prune': '../isomorphic/minimax-pruning-ai',
     'random-ai': '../isomorphic/random-ai'
   }
 });
@@ -16,14 +17,17 @@ function wrap(
     game,
     cards,
     minimax,
+    minimaxPrune,
     randomAi) {
+
+      var fs = require('fs');
     
       league = [
         {
-          "name": "min_max_3",
-          "make_move": (gameState) => {
-            return minimax.recursiveBestMove(gameState, 3);
-          }
+            "name": "min_max_1",
+            "make_move": (gameState) => {
+              return minimax.recursiveBestMove(gameState, 1);
+            }
         },
         {
           "name": "min_max_2",
@@ -32,15 +36,15 @@ function wrap(
           }
         },
         {
-          "name": "min_max_1",
-          "make_move": (gameState) => {
-            return minimax.recursiveBestMove(gameState, 1);
-          }
+            "name": "min_max_3",
+            "make_move": (gameState) => {
+              return minimax.recursiveBestMove(gameState, 3);
+            }
         },
         {
-          "name": "min_max_6",
+          "name": "min_max_4",
           "make_move": (gameState) => {
-            return minimax.recursiveBestMove(gameState, 6);
+            return minimax.recursiveBestMove(gameState, 4);
           }
         },
         {
@@ -48,6 +52,24 @@ function wrap(
           "make_move": (gameState) => {
             return randomAi.chooseMove(gameState);
           }
+        },
+        {
+            "name": "min_max_alpha_beta_3",
+            "make_move": (gameState) => {
+              return minimaxPrune.recursiveBestMove(gameState, 3);
+            }
+        },
+        {
+            "name": "min_max_alpha_beta_4",
+            "make_move": (gameState) => {
+              return minimaxPrune.recursiveBestMove(gameState, 4);
+            }
+        },
+        {
+            "name": "min_max_alpha_beta_5",
+            "make_move": (gameState) => {
+              return minimaxPrune.recursiveBestMove(gameState, 5);
+            }
         }
       ];
 
@@ -107,35 +129,22 @@ function wrap(
       }
 
       function run_league(){
-        results = [];
         game_results = [];
-        for(let team of league){
-          results[team["name"]] = {"wins": 0, "draws": 0, "loses": 0};
-        }
         for(let i=0;i<5;i++){
+          console.log("Run " + i);
           for(let team_1 of league){
             for(let team_2 of league){
+              //console.log(team_1["name"] + " vs " + team_2["name"]);
               if(team_1["name"] !== team_2["name"]){
                   winner = ai_game(team_1["make_move"], team_2["make_move"]);
                   let game_result = {"White": team_1["name"],  "Black": team_2["name"], "winner": winner};
-                  console.log(game_result);
                   game_results.push(game_result);
-                  if(winner == "WHITE"){
-                    results[team_1["name"]]["wins"]++;
-                    results[team_2["name"]]["loses"]++;
-                  }else if(winner == "BLACK"){
-                    results[team_2["name"]]["wins"]++;
-                    results[team_1["name"]]["loses"]++;
-                  }else{
-                    results[team_1["name"]]["draws"]++;
-                    results[team_2["name"]]["draws"]++;
-                  }
               }
+            }
           }
         }
+        return game_results;
       }
-      return results;
-    }
 
     var f = [];
     function factorial (n) {
@@ -154,36 +163,62 @@ function wrap(
       return chance_of_results * combinations;
     }
 
-    function avg_turn_time(ai, number_of_turns=10000){
+    function turn_time(ai, number_of_turns=100){
       let turns = 0;
-      let aiTime = 0;
+      let aiTimes = [];
       while(true){
         let gameState = new game.GameState().initialize(cards.deck);
         gameState.start();
         while(!gameState.terminated){
           if(turns > number_of_turns){
-            return aiTime / turns;
+            return aiTimes;
           }
           let startTime = process.hrtime();
           let move = ai(gameState);
           let [seconds, nanoseconds] = process.hrtime(startTime);
-          aiTime += seconds * 1e9 + nanoseconds;
+          aiTimes.push(seconds * 1e9 + nanoseconds);
           turns += 1;
           gameState.executeMove(move.sourceCell, move.targetCell, move.card);
         }
       }
     }
-    results = run_league();
-    //console.log(results); 
-    /*wins = compare_ais(league[0]["make_move"], league[4]["make_move"]);
-    console.log(wins);
-    console.log(significance(wins["ai_1"], wins["ai_2"]));*/
-    //console.log(avg_turn_time(league[1]["make_move"])/1e+6);
+    
+    function branching_factor(number_of_games=20000){
+        let branching_factor = [];
+        for(let i=0; i<number_of_games; i++){
+          let gameState = new game.GameState().initialize(cards.deck);
+          gameState.start();
+          while(!gameState.terminated){
+            branching_factor.push([gameState.turnNumber, gameState.gatherMovesForPlayer().length]);
+            let move = randomAi.chooseMove(gameState);
+            gameState.executeMove(move.sourceCell, move.targetCell, move.card);
+          }
+        }
+        return branching_factor;
+      }
+
+    if(process.argv[2] == "play_off"){
+        console.log("Running league");
+        let game_results = run_league();
+        fs.writeFileSync("./data/game_results.json", JSON.stringify(game_results));
+    }else if(process.argv[2] == "turn_time"){
+        console.log("Getting turn times");
+        let turn_times = {};
+        for(let team of league){
+            turn_times[team["name"]] = turn_time(team["make_move"]);
+        }
+        fs.writeFileSync("./data/turn_times.json", JSON.stringify(turn_times));
+    }else if(process.argv[2] == "branching_factor"){
+        console.log("Getting branching_factor");
+        let branching_factors = branching_factor();
+        fs.writeFileSync("./data/branching_factors.json", JSON.stringify(branching_factors));
+    }
 }
 
 requirejs([
   'game',
   'cards',
   'minimax-ai',
+  "minimax-prune",
   'random-ai'
 ], wrap);

@@ -1,0 +1,23 @@
+Bug:
+Game doesnt set starting player based on colour of spare card
+    Though because who gets what colour is still randomised it note a huge deal
+    But does make it differ from real Game
+Need to implement "pass" move, (use GameState.isPassAvailable)
+
+Todo:
+Fix the bug^^ so games don't blow up anymore
+create some tests for stasitical signifiacne of results
+
+Apprently it's not possible to draw in onitama? Said random dude on forum
+    http://forum.arcanewonders.com/index.php?topic=16823.0
+
+Analysis:
+Minmax-notebook:
+    (in node) make test to prove output of Minmax and minmax pruning is identical
+    Chart to show pruning version is more efficent (from then on, dont ever have to use naive version)
+    Do significance test on pruning to see if extra depth helps
+    (assuming it doesnt)
+        Remove "pwn" points and see how that changes results
+        Shuffle moves (when choices are even), see what effect that has
+    Bonus: timing analss of why long outlier tail?
+Montecarlo tree search
