@@ -84,7 +84,9 @@ gulp.task('_test', function() {
       'colors': '../isomorphic/colors',
       'cards': '../isomorphic/cards',
       'utils': '../isomorphic/utils',
-      'mocket': '../test/mocket'
+      'mocket': '../test/mocket',
+      'minimax-prune': '../isomorphic/minimax-pruning-ai',
+      'random-ai': '../isomorphic/random-ai'
     }
   });
 

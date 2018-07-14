@@ -15,13 +15,11 @@
 
     function baseEvalState(perspective, gameState, weights=defaultWeights) {
       var value = 0;
-
       if (gameState.winner === perspective) {
         value += weights.VICTORY;
       } else if (gameState.winner !== null) {
         value -= weights.VICTORY;
       }
-
       gameState.getPieces()
         .forEach(({piece}) => {
           if (piece.color === perspective) {
@@ -30,6 +28,7 @@
             value -= weights.PAWN;
           }
         });
+
 
       return value;
     }
@@ -57,51 +56,69 @@
 
     }
 
-    function recursiveBestMove(gameState, depth, weights=defaultWeights) {
-
+    function recursiveBestMove(gameState, depth, ourTeam=gameState.currentTurn, weights=defaultWeights) {
       if(depth < 1){
         console.log("Depth should start be a minimum of 1");
       }
-      const possibleMoves = getMoves(gameState)
-        .map(move => {
-            move.value = stateValueAfterMove(gameState, depth-1, move, weights);
-            return move;
-          }
-        )
-        .sort((l, r) => r.value - l.value);
-        if(possibleMoves.length == 0){
-          //pick a random card to hand over
+      var currentBest = -Infinity;
+      let moves = getMoves(gameState);
+      if(moves.length == 0){
+        //pick a random card to hand over
+        //console.log("no move possible");
           return {
-            card: gameState.getAvailableCards(gameState.currentTurn)[0],
-            sourceCell: null,
-            targetCell: null
-          };
+          card: gameState.getAvailableCards(gameState.currentTurn)[0],
+          sourceCell: null,
+          targetCell: null
+        };
+      }
+      let chosenMove;
+      for(let move of moves){
+        let moveValue;
+        let newGameState = branchAndMove(move, gameState);
+        if (depth-1 == 0 || newGameState.terminated) {
+          moveValue = baseEvalState(ourTeam, newGameState, weights);
         }else{
-          return possibleMoves[0];
+          moveValue = minMoveValue(newGameState, depth-1, ourTeam, weights);
         }
-    }
-
-    function stateValueAfterMove(gameState, depth, move, weights) {
-      // this function is more like "maxmax" then "minimax"
-      // because we let the opponent maximise their heuristic, instead of minimising ours
-      // but that ok because the heuristic is symetric between players
-
-      gameState = branchAndMove(move, gameState);
-      
-      if (depth == 0 || gameState.terminated) {
-        let perspective = gameState.currentTurn;
-        return baseEvalState(perspective, gameState, weights);
-      }else{
-        const possibleValues = getMoves(gameState)
-        .map(nextMove => stateValueAfterMove(gameState, depth-1, nextMove, weights))
-        .sort((l, r) => r - l);
-        if(possibleValues.length == 0){
-          // read the onitama rules and work out if having to skip a go is good or bad
-          //for now, return 0 as a neutral value
-        }else{
-          return possibleValues[0];
+        if(currentBest < moveValue){
+          currentBest = moveValue;
+          chosenMove = move;
         }
       }
+      return chosenMove;
+    }
+
+    function minMoveValue(gameState, depth, ourTeam, weights) {
+      const possibleMoves = getMoves(gameState);
+      //if no moves are possible, state value will be worst possible (Infinity)
+      var currentBest = Infinity;
+      for(let move of getMoves(gameState)){
+        let moveValue;
+        let newGameState = branchAndMove(move, gameState);
+        if (depth-1 == 0 || newGameState.terminated) {
+          moveValue = baseEvalState(ourTeam, newGameState, weights);
+        }else{
+          moveValue = maxMoveValue(newGameState, depth-1, ourTeam, weights);
+        }
+        currentBest = Math.min(currentBest, moveValue);
+      }
+      return currentBest;
+    }
+
+    function maxMoveValue(gameState, depth, ourTeam, weights) {
+      const possibleMoves = getMoves(gameState);
+      //if no moves are possible, state value will be worst possible (Infinity)
+      var currentBest = -Infinity;
+      for(let move of getMoves(gameState)){
+        let newGameState = branchAndMove(move, gameState);
+        if (depth-1 == 0 || newGameState.terminated) {
+          moveValue = baseEvalState(ourTeam, newGameState, weights);
+        }else{
+          moveValue = minMoveValue(newGameState, depth-1, ourTeam, weights);
+        }
+        currentBest = Math.max(currentBest, moveValue);
+      }
+      return currentBest;
     }
 
     return {

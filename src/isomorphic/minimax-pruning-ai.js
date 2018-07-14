@@ -63,7 +63,7 @@
 
     }
 
-    function recursiveBestMove(gameState, depth, ourTeam, weights=defaultWeights) {
+    function recursiveBestMove(gameState, depth, ourTeam=gameState.currentTurn, weights=defaultWeights) {
 
       if(depth < 1){
         console.log("Depth should start be a minimum of 1");
@@ -91,54 +91,79 @@
       return chosenMove;
     }
 
-    function minStateValueAfterMove(gameState, depth, move, ourTeam, weights, parentMax) {
-
-      gameState = branchAndMove(move, gameState);
-      
-      if (depth == 0 || gameState.terminated) {
-        let perspective = gameState.currentTurn;
-        return baseEvalState(ourTeam, gameState, ourTeam, weights);
-      }else{
-        const possibleMoves = getMoves(gameState);
-        //if no moves are possible, state value will be worst possible (Infinity)
-        var currentBest = Infinity;
-        for(let nextMove of getMoves(gameState)){
-          let moveValue = maxStateValueAfterMove(gameState, depth-1, nextMove, ourTeam, weights, currentBest);
-          //this is the pruning
-          if(moveValue <= parentMax){
-            //return value won't actualy be used
-            return moveValue;
-          }else if(Math.min(currentBest, moveValue)){
-            currentBest = moveValue;
-          }
-        }
-        return currentBest;
+    function recursiveBestMove(gameState, depth, ourTeam=gameState.currentTurn, weights=defaultWeights) {
+      if(depth < 1){
+        console.log("Depth should start be a minimum of 1");
       }
+      var currentBest = -Infinity;
+      let moves = getMoves(gameState);
+      if(moves.length == 0){
+        //pick a random card to hand over
+        //console.log("no move possible");
+          return {
+          card: gameState.getAvailableCards(gameState.currentTurn)[0],
+          sourceCell: null,
+          targetCell: null
+        };
+      }
+      let chosenMove;
+      for(let move of moves){
+        let moveValue;
+        let newGameState = branchAndMove(move, gameState);
+        if (depth-1 == 0 || newGameState.terminated) {
+          moveValue = baseEvalState(ourTeam, newGameState, weights);
+        }else{
+          moveValue = minMoveValue(newGameState, depth-1, ourTeam, weights, currentBest);
+        }
+        if(currentBest < moveValue){
+          currentBest = moveValue;
+          chosenMove = move;
+        }
+      }
+      return chosenMove;
     }
 
-    function maxStateValueAfterMove(gameState, depth, move, ourTeam, weights, parentMin) {
-
-      gameState = branchAndMove(move, gameState);
-      
-      if (depth == 0 || gameState.terminated) {
-        let perspective = gameState.currentTurn;
-        return baseEvalState(ourTeam, gameState, ourTeam, weights);
-      }else{
-        const possibleMoves = getMoves(gameState);
-        //if no moves are possible, state value will be worst possible (Infinity)
-        var currentBest = -Infinity;
-        for(let nextMove of getMoves(gameState)){
-          let moveValue = minStateValueAfterMove(gameState, depth-1, nextMove, ourTeam, weights, currentBest);
-          //this is the pruning
-          if(moveValue >= parentMin){
-            //return value won't actualy be used
-            return moveValue;
-          }else if(Math.max(currentBest, moveValue)){
-            currentBest = moveValue;
-          }
+    function minMoveValue(gameState, depth, ourTeam, weights, parentMax) {
+      const possibleMoves = getMoves(gameState);
+      //if no moves are possible, state value will be worst possible (Infinity)
+      var currentBest = Infinity;
+      for(let move of getMoves(gameState)){
+        let moveValue;
+        let newGameState = branchAndMove(move, gameState);
+        if (depth-1 == 0 || newGameState.terminated) {
+          moveValue = baseEvalState(ourTeam, newGameState, weights);
+        }else{
+          moveValue = maxMoveValue(newGameState, depth-1, ourTeam, weights);
         }
-        return currentBest;
+        //this is the pruning
+        if(moveValue <= parentMax){
+          //return value won't actualy be used
+          return moveValue;
+        }
+        currentBest = Math.min(currentBest, moveValue);
       }
+      return currentBest;
+    }
+
+    function maxMoveValue(gameState, depth, ourTeam, weights, parentMin) {
+      const possibleMoves = getMoves(gameState);
+      //if no moves are possible, state value will be worst possible (Infinity)
+      var currentBest = -Infinity;
+      for(let move of getMoves(gameState)){
+        let newGameState = branchAndMove(move, gameState);
+        if (depth-1 == 0 || newGameState.terminated) {
+          moveValue = baseEvalState(ourTeam, newGameState, weights);
+        }else{
+          moveValue = minMoveValue(newGameState, depth-1, ourTeam, weights);
+        }
+        //this is the pruning
+        if(moveValue >= parentMin){
+          //return value won't actualy be used
+          return moveValue;
+        }
+        currentBest = Math.max(currentBest, moveValue);
+      }
+      return currentBest;
     }
 
     return {

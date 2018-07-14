@@ -1,5 +1,5 @@
 ;(function() {
-  function wrap(game, utils, minimaxAI) {
+  function wrap(game, utils, minimaxAI,  minimaxPrune, cards, randomAi) {
     describe('minimax-ai', function() {
       describe('recursiveBestMove', function() {
         var obviousGameData = {
@@ -86,10 +86,27 @@
 
         it('makes the super obvious move', function() {
           const gs = new game.GameState().loadState(obviousGameData),
-            move = minimaxAI.recursiveBestMove(gs, 5);
-          
-          expect(utils.arrayEquals(move.sourceCell, [2,3])).toBe(true);
-          expect(utils.arrayEquals(move.targetCell, [2,4])).toBe(true);
+            move = minimaxAI.recursiveBestMove(gs, 5),
+            pruneMove = minimaxPrune.recursiveBestMove(gs, 5);
+          expect(move.card.getId() === pruneMove.card.getId()).toBe(true);
+          expect(utils.arrayEquals(move.sourceCell, pruneMove.sourceCell)).toBe(true);
+          expect(utils.arrayEquals(move.targetCell, pruneMove.targetCell)).toBe(true);
+        });
+
+        it('same moves over random sample', function() {
+          for(let i=0; i<10; i++){
+            let gameState = new game.GameState().initialize(cards.deck);
+            gameState.start();
+            while(!gameState.terminated){
+              let move = minimaxAI.recursiveBestMove(gameState, 3);
+              let pruneMove = minimaxPrune.recursiveBestMove(gameState, 3);
+              expect(move.card.getId() === pruneMove.card.getId()).toBe(true);
+              expect(utils.arrayEquals(move.sourceCell, pruneMove.sourceCell)).toBe(true);
+              expect(utils.arrayEquals(move.targetCell, pruneMove.targetCell)).toBe(true);
+              let randomMove = randomAi.chooseMove(gameState);
+              gameState.executeMove(randomMove.sourceCell, randomMove.targetCell, randomMove.card);
+            }
+          }
         });
       });
     });
@@ -98,6 +115,9 @@
   define([
     'game',
     'utils',
-    'minimax-ai'
-  ], wrap);
+    'minimax-ai',
+    'minimax-prune',
+    'cards',
+    'random-ai'
+    ], wrap);
 })();

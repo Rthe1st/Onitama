@@ -177,6 +177,9 @@
           throw new Error('Invalid move!');
         }
 
+        this.unsafeExecuteMove(initialPosition, targetPosition, card);
+      },
+      unsafeExecuteMove(initialPosition, targetPosition, card){
         let pass = (initialPosition == null && targetPosition == null);
 
         if(!pass){
@@ -235,6 +238,9 @@
           });
         }
       },
+      cutExecuteMove(initialPosition, targetPosition, card){
+      },
+
       branch() {
         return new GameState().loadState(this.serialize());
       },

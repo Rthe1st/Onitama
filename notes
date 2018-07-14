@@ -12,8 +12,9 @@ Apprently it's not possible to draw in onitama? Said random dude on forum
     http://forum.arcanewonders.com/index.php?topic=16823.0
 
 Analysis:
+make "unsafe" move function which doesnt check inputs
+    This will be way faster for using in simulated games
 Minmax-notebook:
-    (in node) make test to prove output of Minmax and minmax pruning is identical
     Chart to show pruning version is more efficent (from then on, dont ever have to use naive version)
     Do significance test on pruning to see if extra depth helps
     (assuming it doesnt)
@@ -21,3 +22,9 @@ Minmax-notebook:
         Shuffle moves (when choices are even), see what effect that has
     Bonus: timing analss of why long outlier tail?
 Montecarlo tree search
+
+Number of states:
+25P4 * 21P4 * 17P1 * 16P1 = 1.19*10^13 (10 trillion)
+card comibations  (for a specific game) = 5 = insignficat
+times another few 10^11 for combinations with 3 pawns, etc
+puts us in 10^24+ range at least

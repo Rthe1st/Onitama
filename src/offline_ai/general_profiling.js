@@ -21,7 +21,7 @@ function wrap(
     randomAi) {
 
       var fs = require('fs');
-        
+    
     function branching_factor(number_of_games=20000){
         let branching_factor = [];
         for(let i=0; i<number_of_games; i++){
@@ -72,21 +72,14 @@ function wrap(
       }
     }
 
-    if(process.argv[2] == "play_off"){
-        console.log("Running league");
-        let game_results = run_league();
-        fs.writeFileSync("./data/game_results.json", JSON.stringify(game_results));
-    }else if(process.argv[2] == "all_v_all"){
-        console.log("All v all");
-        let results = all_v_all();
-        fs.writeFileSync("./data/all_v_all.json", JSON.stringify(results));
-    }else if(process.argv[2] == "turn_time"){
-        console.log("Getting turn times");
-        let turn_times = {};
-        for(let team of league){
-            turn_times[team["name"]] = turn_time(team["make_move"]);
-        }
-        fs.writeFileSync("./data/turn_times.json", JSON.stringify(turn_times));
+    if(process.argv[2] == "time_move"){
+      console.log("Timing move");
+      let times = time_move();
+      fs.writeFileSync("./data/move_times.json", JSON.stringify(times));
+    }else if(process.argv[2] == "branching_factor"){
+        console.log("Getting branching_factor");
+        let branching_factors = branching_factor();
+        fs.writeFileSync("./data/branching_factors.json", JSON.stringify(branching_factors));
     }else{
         console.log("nothing");
     }
